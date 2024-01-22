@@ -10,7 +10,7 @@ import (
 	"image/png"
 	"io"
 
-	bmp "github.com/jsummers/gobmp"
+	"golang.org/x/image/bmp"
 )
 
 func init() {
@@ -129,7 +129,12 @@ func (d *decoder) decode(r io.Reader) (err error) {
 					if e.Bits == 32 { //  32 bit bmps do hacky things with an alpha channel, it's included as the 4th byte of the colors
 						rowSize := (int(e.Width)*32 + 31) / 32 * 4
 						offset := int(binary.LittleEndian.Uint32(data[10:14]))
-						mask.SetAlpha(col, int(e.Height)-row-1, color.Alpha{data[offset+row*rowSize+col*4+3]})
+						alphaPosition := offset + row*rowSize + col*4 + 3
+						var alpha color.Alpha
+						if len(data) > alphaPosition { // bounds checking for alpha
+							alpha = color.Alpha{data[alphaPosition]}
+						}
+						mask.SetAlpha(col, int(e.Height)-row-1, alpha)
 					}
 				}
 			}
